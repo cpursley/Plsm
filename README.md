@@ -27,7 +27,7 @@ Generate all public tables:
 
 Generate a specific table (Postgres only):
 
-`mix plsm --table "appraisals"`
+`mix plsm --table "users"`
 
 You are able to change the location of the model file output in the configuration file
 

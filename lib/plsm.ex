@@ -1,7 +1,10 @@
 defmodule Mix.Tasks.Plsm do
   use Mix.Task
 
-  def run(_) do
+  def run(params) do
+    {opts, _, _} = OptionParser.parse(params, strict: [table: :string])
+    table_name = Keyword.get(opts, :table)
+
     # ensure all dependencies are started manually.
     {:ok, _started} = Application.ensure_all_started(:postgrex)
 
@@ -11,6 +14,7 @@ defmodule Mix.Tasks.Plsm do
     |> Plsm.Database.Common.create()
     |> Plsm.Database.connect()
     |> Plsm.Database.get_tables()
+    |> Enum.filter(fn table -> if is_binary(table_name), do: table.name == table_name, else: table end)
     |> Enum.map(fn x -> {x, Plsm.Database.get_columns(x.database, x)} end)
     |> Enum.map(fn {header, columns} -> %Plsm.Database.Table{header: header, columns: columns} end)
     |> Enum.map(fn table -> Plsm.IO.Export.prepare(table, configs.project.name) end)

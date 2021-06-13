@@ -19,9 +19,15 @@ First, in order to run plsm, you need to generate a config file. You do this by 
 
 This will create a skeleton config file to the given config file. If you don't specify a config.exs file the config will then be appended to the "config/config.exs" file. If you are using another structure, such as Phoenix, then you need to pass in your dev.exs, since this is a dev only process. You will need to make changes to the generated Plsm configs in the config file in order to allow Plsm to function correctly.
 
-Once you have your config file generated then you are ready to run plsm. You do this by running 
+Once you have your config file generated then you are ready to run plsm. You do this by running:
+
+Generate all public tables:
 
 `mix plsm`
+
+Generate a specific table (Postgres only):
+
+`mix plsm --table "appraisals"`
 
 You are able to change the location of the model file output in the configuration file
 

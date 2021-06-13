@@ -2,23 +2,32 @@ defmodule Plsm.IO.Export do
   @doc """
     Generate the schema field based on the database type
   """
+  def type_output({"id", _type, _true}), do: ""
+
   def type_output({name, type, is_primary_key?}) do
     escaped_name = escaped_name(name)
+    is_id = String.ends_with?(escaped_name, "id")
 
-    type_output_with_source(escaped_name, name, map_type(type), is_primary_key?)
+    type_output_with_source(
+      escaped_name,
+      name,
+      map_type(type, is_id, escaped_name),
+      is_primary_key?
+    )
     |> four_space()
   end
 
-  defp map_type(:boolean), do: ":boolean"
-  defp map_type(:decimal), do: ":decimal"
-  defp map_type(:float), do: ":float"
-  defp map_type(:string), do: ":string"
-  defp map_type(:text), do: ":string"
-  defp map_type(:map), do: ":map"
-  defp map_type(:date), do: ":date"
-  defp map_type(:time), do: ":time"
-  defp map_type(:timestamp), do: ":naive_datetime"
-  defp map_type(:integer), do: ":integer"
+  defp map_type(:integer, true, _), do: ":id"
+  defp map_type(:text, _, _), do: ":string"
+  defp map_type(:date, _, _), do: ":naive_datetime"
+  defp map_type(:uuid, _, _), do: Ecto.UUID
+  defp map_type(:geography, _, _), do: Geo.PostGIS.Geometry
+
+  defp map_type(:none, _, name) do
+    ":string" |> IO.inspect(label: "setting none field type to string for #{name}")
+  end
+
+  defp map_type(other, _, _), do: ":#{other}"
 
   @doc """
   When escaped name and name are the same, source option is not needed

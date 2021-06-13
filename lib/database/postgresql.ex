@@ -55,9 +55,10 @@ defimpl Plsm.Database, for: Plsm.Database.PostgreSQL do
     |> Enum.map(fn x -> %Plsm.Database.TableHeader{database: db, name: x} end)
   end
 
+
   @spec get_columns(Plsm.Database.PostgreSQL, Plsm.Database.Table) :: [Plsm.Database.Column]
   def get_columns(db, table) do
-    {_, result} = Postgrex.query(db.connection, "
+    case Postgrex.query(db.connection, "
           SELECT DISTINCT
             a.attname as column_name,
             format_type(a.atttypid, a.atttypmod) as data_type,
@@ -74,22 +75,18 @@ defimpl Plsm.Database, for: Plsm.Database.PostgreSQL do
       	ccu.table_name AS references_table,
       	ccu.column_name AS references_field
       	FROM information_schema.table_constraints tc
-
       	LEFT JOIN information_schema.key_column_usage kcu
       	ON tc.constraint_catalog = kcu.constraint_catalog
       	AND tc.constraint_schema = kcu.constraint_schema
       	AND tc.constraint_name = kcu.constraint_name
-
       	LEFT JOIN information_schema.referential_constraints rc
       	ON tc.constraint_catalog = rc.constraint_catalog
       	AND tc.constraint_schema = rc.constraint_schema
       	AND tc.constraint_name = rc.constraint_name
-
       	LEFT JOIN information_schema.constraint_column_usage ccu
       	ON rc.unique_constraint_catalog = ccu.constraint_catalog
       	AND rc.unique_constraint_schema = ccu.constraint_schema
       	AND rc.unique_constraint_name = ccu.constraint_name
-
       	WHERE lower(tc.constraint_type) in ('foreign key')
         ) as f on a.attname = f.field
         LEFT JOIN pg_index i ON
@@ -98,10 +95,14 @@ defimpl Plsm.Database, for: Plsm.Database.PostgreSQL do
         AND pg_table_is_visible(pgc.oid)
         AND NOT a.attisdropped
         AND pgc.relname = '#{table.name}'
-        ORDER BY a.attname;", [])
+        ORDER BY a.attnum;", []) do
+      {:ok, result} ->
+        result.rows
+        |> Enum.map(&to_column/1)
 
-    result.rows
-    |> Enum.map(&to_column/1)
+      {:error, error} ->
+        IO.inspect(error)
+    end
   end
 
   defp to_column(row) do
@@ -130,6 +131,8 @@ defimpl Plsm.Database, for: Plsm.Database.PostgreSQL do
       String.starts_with?(upcase, "SMALLINT") == true -> :integer
       String.starts_with?(upcase, "BIGINT") == true -> :integer
       String.starts_with?(upcase, "CHAR") == true -> :string
+      String.starts_with?(upcase, "BPCHAR") == true -> :string
+      String.starts_with?(upcase, "NAME") == true -> :string
       String.starts_with?(upcase, "TEXT") == true -> :string
       String.starts_with?(upcase, "FLOAT") == true -> :float
       String.starts_with?(upcase, "DOUBLE") == true -> :float
@@ -142,6 +145,9 @@ defimpl Plsm.Database, for: Plsm.Database.PostgreSQL do
       String.starts_with?(upcase, "TIMESTAMP") == true -> :timestamp
       String.starts_with?(upcase, "TIME") == true -> :time
       String.starts_with?(upcase, "BOOLEAN") == true -> :boolean
+      String.starts_with?(upcase, "BYTEA") == true -> :binary
+      String.starts_with?(upcase, "UUID") == true -> :uuid
+      String.starts_with?(upcase, "GEOGRAPHY") == true -> :geography
       true -> :none
     end
   end

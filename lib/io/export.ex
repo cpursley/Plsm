@@ -26,8 +26,6 @@ defmodule Plsm.IO.Export do
     ":string" |> IO.inspect(label: "setting none field type to string")
   end
 
-  defp map_type(other, _, _), do: ":#{other}"
-
   @doc """
   When escaped name and name are the same, source option is not needed
   """

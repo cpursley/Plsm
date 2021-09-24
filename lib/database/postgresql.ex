@@ -95,7 +95,7 @@ defimpl Plsm.Database, for: Plsm.Database.PostgreSQL do
         AND pg_table_is_visible(pgc.oid)
         AND NOT a.attisdropped
         AND pgc.relname = '#{table.name}'
-        ORDER BY a.attnum;", []) do
+        ORDER BY a.attname;", []) do
       {:ok, result} ->
         result.rows
         |> Enum.map(&to_column/1)
